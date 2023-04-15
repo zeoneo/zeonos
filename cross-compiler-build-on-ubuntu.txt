@@ -1,0 +1,52 @@
+#Installs compiler and make
+
+sudo apt-get install build-essential
+
+sudo apt install bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo libisl-dev 
+
+
+mkdir -p tools/src
+
+cd tools/src
+
+wget https://ftp.gnu.org/gnu/binutils/binutils-2.40.tar.xz
+
+tar -xf binutils-2.40.tar.xz
+
+rm -rf  binutils-2.40.tar.xz
+
+wget https://ftp.gnu.org/gnu/gcc/gcc-12.2.0/gcc-12.2.0.tar.xz
+
+
+tar -xf gcc-12.2.0.tar.xz
+
+rm -rf gcc-12.2.0.tar.xz
+
+
+export PREFIX="$(pwd)/../opt/cross"
+export TARGET=i686-elf
+export PATH="$PREFIX/bin:$PATH"
+
+mkdir build-binutils && cd build-binutils
+
+../binutils-binutils-2.40/configure --target=$TARGET --prefix="$PREFIX" --with-sysroot --disable-nls --disable-werror
+
+make
+
+make install 
+
+cd ../
+
+which -- $TARGET-as || echo $TARGET-as is not in the PATH
+
+mkdir build-gcc && cd build-gcc
+
+../gcc-12.2.0/configure --target=$TARGET --prefix="$PREFIX" --disable-nls --enable-languages=c,c++ --without-headers
+
+make all-gcc -j8
+
+make all-target-libgcc -j16
+
+make install-gcc
+
+make install-target-libgcc

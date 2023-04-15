@@ -1,0 +1,209 @@
+mkdir -p src_hosted && cd src_hosted
+
+wget https://ftp.gnu.org/gnu/binutils/binutils-2.40.tar.xz
+
+tar -xf binutils-2.40.tar.xz
+
+rm -rf  binutils-2.40.tar.xz
+
+wget https://ftp.gnu.org/gnu/gcc/gcc-12.2.0/gcc-12.2.0.tar.xz
+
+
+tar -xf gcc-12.2.0.tar.xz
+
+rm -rf gcc-12.2.0.tar.xz
+
+------
+config.sub 
+
+add myos* on line 1757
+
+------
+bfd/config.bfd on line 669 add 
+
+  i[3-7]86-*-myos*)
+    targ_defvec=i386_elf32_vec
+    targ_selvecs=
+    targ64_selvecs=x86_64_elf64_vec
+    ;;
+#ifdef BFD64
+  x86_64-*-myos*)
+    targ_defvec=x86_64_elf64_vec
+    targ_selvecs=i386_elf32_vec
+    want64=true
+    ;;
+#endif
+
+----------------
+ gas/configure.tgt on line 228 add following line
+
+   i386-*-myos*)    fmt=elf em=linux ;;
+
+
+------------------
+ld/configure.tgt on line 425 add
+
+i[3-7]86-*-myos*)
+			targ_emul=elf_i386_myos
+			targ_extra_emuls=elf_i386
+			targ64_extra_emuls="elf_x86_64_myos elf_x86_64"
+			;;
+x86_64-*-myos*)
+			targ_emul=elf_x86_64_myos
+			targ_extra_emuls="elf_i386_myos elf_x86_64 elf_i386"
+			;;
+
+-------------------
+add new file elf_i386_myos.sh at ld/emulparams folder
+
+source_sh ${srcdir}/emulparams/elf_i386.sh
+TEXT_START_ADDR=0x08000000
+
+-----
+elf_x86_64_myos.sh 
+
+source_sh ${srcdir}/emulparams/elf_x86_64.sh
+
+
+--------
+in file ld/Makefile.am line 773
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_myos.Pc@am__quote@
+
+line 950
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_myos.Pc@am__quote@
+
+
+
+cd binutils-2.40/ld/
+
+automake
+
+-------------------
+
+gcc/config.gcc on line 676
+
+*-*-myos*)
+  gas=yes
+  gnu_ld=yes
+  default_use_cxa_atexit=yes
+  use_gcc_stdint=provide
+  ;;
+
+line 1908
+
+i[34567]86-*-myos*)
+    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h myos.h"
+    ;;
+x86_64-*-myos*)
+    tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h myos.h"
+    ;;
+
+------
+gcc/config/myos.h
+
+/* Useful if you wish to make target-specific GCC changes. */
+#undef TARGET_MYOS
+#define TARGET_MYOS 1
+ 
+/* Default arguments you want when running your
+   i686-myos-gcc/x86_64-myos-gcc toolchain */
+#undef LIB_SPEC
+#define LIB_SPEC "-lc" /* link against C standard library */
+ 
+/* Files that are linked before user code.
+   The %s tells GCC to look for these files in the library directory. */
+#undef STARTFILE_SPEC
+#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
+ 
+/* Files that are linked after user code. */
+#undef ENDFILE_SPEC
+#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
+ 
+/* Additional predefined macros. */
+#undef TARGET_OS_CPP_BUILTINS
+#define TARGET_OS_CPP_BUILTINS()      \
+  do {                                \
+    builtin_define ("__myos__");      \
+    builtin_define ("__unix__");      \
+    builtin_assert ("system=myos");   \
+    builtin_assert ("system=unix");   \
+    builtin_assert ("system=posix");   \
+  } while(0);
+------------------
+config.sub
+
+on line 1752 addd myos*
+
+-------------------
+ libstdc++-v3/crossconfig.m4 
+
+ line 70 
+
+   *-myos*)
+    GLIBCXX_CHECK_COMPILER_FEATURES
+    GLIBCXX_CHECK_LINKER_FEATURES
+    GLIBCXX_CHECK_MATH_SUPPORT
+    GLIBCXX_CHECK_STDLIB_SUPPORT
+    ;;
+
+run autoconf in libstdc++-v3 in case of errors run aclocal first and then autoconf
+
+
+-------------
+ libgcc/config.host line 380
+
+ i[34567]86-*-myos*)
+	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
+	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
+	;;
+x86_64-*-myos*)
+	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
+	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
+	;;
+
+    
+------------------
+
+ fixincludes/mkfixinc.sh line 16-17
+
+ *-myos* | \
+*-*-myos* | \
+
+
+-----
+ git clone https://gitlab.com/sortie/meaty-skeleton.git
+ execute header.sh file to create sysroot directory. 
+ Copy this sysroot to appropriate path
+
+--------------
+
+mkdir build-binutils
+cd build-binutils
+
+export PREFIX="$(pwd)/../opt_hosted/cross"
+export TARGET=i686-myos
+export PATH="$PREFIX/bin:$PATH"
+export SYSROOT="$(pwd)/sysroot"
+
+
+../binutils-2.40/configure --target=i686-myos --prefix="$PREFIX" --with-sysroot=$SYSROOT --disable-werror
+
+in ld/Makefile
+You need to add eelf_i386_myos.c to the ALL_EMULATION_SOURCES list; you also need to add eelf_x86_64_myos.c to the ALL_64_EMULATION_SOURCES list if applicable. 
+
+
+make -j16
+make install
+
+
+
+cd ../
+mkdir build-gcc && cd build-gcc
+
+../gcc-12.2.0/configure --target=i686-myos --prefix="$PREFIX" --with-sysroot=$SYSROOT --enable-languages=c,c++
+
+make all-gcc all-target-libgcc -j16
+
+make install-gcc install-target-libgcc
