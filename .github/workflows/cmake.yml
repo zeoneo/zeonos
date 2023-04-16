@@ -38,8 +38,9 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: |
+        export SHELL=/bin/bash
         export PATH=./arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi/bin/:${PATH}
-        echo "export PATH=\$(pwd)/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi/bin/" >> $HOME/.profile && source $HOME/.profile
+        echo "export PATH=\$PATH:\$(pwd)/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi/bin/" >> $HOME/.profile && source $HOME/.profile
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: Test
