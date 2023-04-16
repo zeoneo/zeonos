@@ -29,7 +29,7 @@ add_subdirectory(kernel)
 # Add support for cppcheck
 find_program(CPPCHECK_PATH cppcheck)
 if(NOT CPPCHECK_PATH)
-    message(FATAL_ERROR "Could not find cppcheck, please install it or make sure it is in your PATH ${CPPCHECK_PATH}")
+    message(WARNING, "Could not find cppcheck, please install it or make sure it is in your PATH ${CPPCHECK_PATH}")
 endif()
 list(APPEND CMAKE_CXX_CPPCHECK ${CPPCHECK_PATH})
 
@@ -42,7 +42,7 @@ add_custom_target(cppcheck
 
 find_program(CLANG_FORMAT_PATH clang-format)
 if(NOT CLANG_FORMAT_PATH)
-    message(FATAL_ERROR "Could not find clang-format, please install it or make sure it is in your PATH")
+    message(WARNING "Could not find clang-format, please install it or make sure it is in your PATH")
 endif()
 set(CMAKE_CXX_CLANG_FORMAT ${CLANG_FORMAT_PATH})
 
