@@ -13,7 +13,11 @@ SECTIONS
     }
     . = ALIGN(4096); /* align to page size */
     __text_end = .;
- 
+    
+    .init : {
+		*(.init)
+	}
+
     __rodata_start = .;
     .rodata :
     {
@@ -21,7 +25,23 @@ SECTIONS
     }
     . = ALIGN(4096); /* align to page size */
     __rodata_end = .;
- 
+    
+    	.init_array : {
+		__init_start = .;
+
+		KEEP(*(.init_array*))
+
+		__init_end = .;
+	}
+
+	.ARM.exidx : {
+		__exidx_start = .;
+
+		*(.ARM.exidx*)
+
+		__exidx_end = .;
+	}
+    
     __data_start = .;
     .data :
     {

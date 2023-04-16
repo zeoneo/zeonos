@@ -10,9 +10,20 @@ set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
 set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
 
-set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access")
+#FIXME: -nostdinc
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -fbuiltin -mgeneral-regs-only -fno-asynchronous-unwind-tables -fstack-protector-strong -fno-exceptions -Wno-cast-align")
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostdlib")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -fbuiltin -mgeneral-regs-only -fno-asynchronous-unwind-tables -fstack-protector-strong -fno-exceptions -Wno-cast-align")
+
+#FIXME: Add standard headers later
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti ") #-nostdinc++
+
+# add_compile_options(-fsanitize=kernel-address)
+# add_link_options(-fsanitize=kernel-address)
+
+
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostdlib -nodefaultlibs")
 
 # Define the project name
 project(zeoos LANGUAGES C CXX ASM)

@@ -1,6 +1,7 @@
 # Define the executable name
 add_executable(kernel8-32.elf
     boot.S
+    hello.cpp
     kernel.c
 )
 
