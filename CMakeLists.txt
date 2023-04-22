@@ -9,7 +9,7 @@ set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
 
 set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_definitions(-D__is_zeonos_kernel=1)
 
 # 

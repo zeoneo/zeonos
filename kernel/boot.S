@@ -1,12 +1,15 @@
 // To keep this in the first portion of the binary.
-.section ".text.boot"
  
 // Make _start global.
-.globl _start
+.global _start
 .global _get_stack_pointer
 .global _exception_table
 .global _enable_interrupts
 
+
+// ARM Processor Modes and Registers
+// Cortex A series programmers guidee
+// Search - Table 3-2 ARMv7 processor modes
 .equ ARM_MODE_USR, 0x10;								;@ CPU in USR mode .. Normal User mode
 .equ ARM_MODE_FIQ, 0x11;								;@ CPU in FIQ mode .. FIQ Processing
 .equ ARM_MODE_IRQ, 0x12;								;@ CPU in IRQ mode .. IRQ Processing
@@ -19,13 +22,6 @@
 .equ ARM_I_BIT,		0x80;								;@ IRQs disabled when set to 1
 .equ ARM_F_BIT,		0x40;
 
-.equ    CPSR_MODE_USER,         0x10
-.equ    CPSR_MODE_FIQ,          0x11
-.equ    CPSR_MODE_IRQ,          0x12
-.equ    CPSR_MODE_SVR,          0x13
-.equ    CPSR_MODE_ABORT,        0x17
-.equ    CPSR_MODE_UNDEFINED,    0x1B
-.equ    CPSR_MODE_SYSTEM,       0x1F
 
 // See ARM section A2.5 (Program status registers)
 .equ    CPSR_IRQ_INHIBIT,       0x80
@@ -36,9 +32,26 @@
 .equ	SCTLR_ENABLE_BRANCH_PREDICTION, 0x800
 .equ	SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000
 
+.equ    MMUTABLEBASE ,                  0x00004000
 
+// Declare constants for the multiboot header.
+.equ ALIGN,    1<<0             // align loaded modules on page boundaries
+.equ MEMINFO,  1<<1             // provide memory map
+.equ MULTIBOOT_HEADER_FLAGS,    ALIGN | MEMINFO  // this is the Multiboot 'flag' field
+.equ MULTIBOOT_HEADER_MAGIC,    0x1BADB002       // 'magic number' lets bootloader find the header
+.equ CHECKSUM, -(MULTIBOOT_HEADER_FLAGS + MULTIBOOT_HEADER_MAGIC) // checksum of above, to prove we are multiboot
+
+// Declare a multiboot header that marks the program as a kernel.
+
+.section ".multiboot.data", "aw"
+
+.align 4
+.word MULTIBOOT_HEADER_MAGIC
+.word MULTIBOOT_HEADER_FLAGS
+.word CHECKSUM
+
+.section ".multiboot.text", "aw"
 .balign 4
-
 _start:
     ldr pc, _reset_h
     ldr pc, _undefined_instruction_vector_h
@@ -60,6 +73,9 @@ _start:
 
 
 _reset_:
+
+// CORTEX A53 Guide - MPIDR, Multiprocessor Affinity Register
+//
     mrc p15, 0, r6,c0,c0,5
     and     r6, r6, #3
     mov r7, #0
@@ -71,39 +87,27 @@ _reset_:
 2:  // cpu id == 0
 
 
-	mov r12, pc											;@ Hold boot address in high register R12
-	mrs r0, CPSR										;@ Fetch the cpsr register
-	orr r0, r0, #(ARM_I_BIT | ARM_F_BIT)				;@ Disable Irq/Fiq
-	and r11, r0, #ARM_MODE_MASK							;@ Clear all but CPU mode bits in register r11
+	mov r12, pc											
+	mrs r0, CPSR										
+	orr r0, r0, #(ARM_I_BIT | ARM_F_BIT)				// Disable Irq/Fiq
+	and r11, r0, #ARM_MODE_MASK							//Clear all but CPU mode bits in register r11
 
- 	cmp r11, #ARM_MODE_HYP								;@ Check we are in HYP_MODE											
-	bne .NotInHypMode									;@ Branch if not equal meaning was not in HYP_MODE  
-	bic r0, r0, #ARM_MODE_MASK							;@ Clear the CPU mode bits in register r0							
-	orr r0, r0, #ARM_MODE_SVC							;@ ARM_MODE_SVC bits onto register	
-    msr spsr_cxsf,r0									;@ Hold value in spsr_cxsf
-    add lr,pc,#4										;@ Calculate address of .NotInHypMode label
+ 	cmp r11, #ARM_MODE_HYP								// Check we are in HYP_MODE											
+	bne .start_el1_svc_mode								// Branch if not equal meaning was not in HYP_MODE  
+	bic r0, r0, #ARM_MODE_MASK							// Clear the CPU mode bits in register r0							
+	orr r0, r0, #ARM_MODE_SVC							// ARM_MODE_SVC bits onto register	
+    msr spsr_cxsf,r0									// Hold value in spsr_cxsf
+    add lr,pc,#4										// Calculate address of .NotInHypMode label
 
 	msr ELR_hyp, lr
 	eret
 
-.NotInHypMode:
-    mov r0,#0x8000
-    mov r1,#0x0000
-    ldmia r0!,{r2,r3,r4,r5,r6,r7,r8,r9}
-    stmia r1!,{r2,r3,r4,r5,r6,r7,r8,r9}
-    ldmia r0!,{r2,r3,r4,r5,r6,r7,r8,r9}
-    stmia r1!,{r2,r3,r4,r5,r6,r7,r8,r9}
+.start_el1_svc_mode:
 
-    ;@ (PSR_IRQ_MODE|PSR_FIQ_DIS|PSR_IRQ_DIS)
-    mov r0,#0xD2
-    msr cpsr_c,r0
-    ldr sp, =__irq_stack_base
-
-
-    ;@ (PSR_SVC_MODE|PSR_FIQ_DIS|PSR_IRQ_DIS)
+    // Setup el1 stack to run the code.
     mov r0,#0xD3
     msr cpsr_c,r0
-    ldr sp, =__svc_stack_base
+    ldr sp, =__svc_stack_base - 0xc0000000
 
     // enable unaligned address access
 	mrc p15, 0, r0, c1, c0, 0
@@ -111,35 +115,93 @@ _reset_:
 	mcr p15, 0, r0, c1, c0, 0
 
     // Enable VFP ------------------------------------------------------------
-
     // r1 = Access Control Register
-    MRC p15, #0, r1, c1, c0, #2
+    mrc p15, #0, r1, c1, c0, #2
     // enable full access for p10,11
-    ORR r1, r1, #(0xf << 20)
+    orr r1, r1, #(0xf << 20)
     // ccess Control Register = r1
-    MCR p15, #0, r1, c1, c0, #2
-    MOV r1, #0
+    mcr p15, #0, r1, c1, c0, #2
+    mov r1, #0
     // flush prefetch buffer because of FMXR below
-    MCR p15, #0, r1, c7, c5, #4
+    mcr p15, #0, r1, c7, c5, #4
     // and CP 10 & 11 were only just enabled
     // Enable VFP itself
-    MOV r0,#0x40000000
-    // FPEXC = r0
-    FMXR FPEXC, r0
+    mov r0, #0x40000000
+    fmxr FPEXC, r0
+    bl lower_uart_init
+    mov r0, #0x1234
+    bl lower_hexstrings
+    bl initialize_virtual_memory
+    bl invalidate_tlbs
+    mov r0, #0x4321
+    bl lower_hexstrings
+    ldr r0, =higher_kernel  // move the address to register r0
+    bx  r0               // jump to the address in r0
 
-    bl kernel_main
- 
-	// halt
+    hlt
 _inf_loop:
     b       _inf_loop
 
-.globl dummy
-dummy:
-    mov     pc, lr
+.globl PUT32
+PUT32:
+    str r1,[r0]
+    bx lr
+
+.globl GET32
+GET32:
+    ldr r0,[r0]
+    bx lr
+
+.globl init_virt_mem
+init_virt_mem:
+    push {r0-r1}
+    pop {r0-r1}
+    bx lr
+
+.globl map_section
+map_section:
+    push {r0-r1}
+    pop {r0-r1}
+    bx lr
+
+.globl start_mmu
+start_mmu:
+    mov r2,#0
+    ;@mcr p15,0,r2,c7,c7,0 ;@ invalidate caches
+    mcr p15,0,r2,c8,c7,0 ;@ invalidate tlb
+    mcr p15,0,r2,c7,c10,4 ;@ DSB ??
+
+     ;@ Domain 0 Manager access. No permissions checked for access
+    MRC p15, 0, r2, c3, c0, 0 ;@ Read DACR into Rt
+    ORR r2, #3
+    MCR p15, 0, r2, c3, c0, 0 ;@ Write Rt to DACR
+
+    MCR p15,0,r0,c2,c0,0 ;@ Write Rt to TTBR0
+    MCR p15, 0, r0, c2, c0, 1 ;@ Write Rt to TTBR1
+
+    MRC p15, 0, r2, c1, c0, 0 ;@ Read SCTLR into Rt
+    orr r2,r2,r1
+    MCR p15, 0, r2, c1, c0, 0 ;@ Write Rt to SCTLR.
+
+    bx lr
+
+.globl invalidate_tlbs
+invalidate_tlbs:
+    mov r2,#0
+    mcr p15,0,r2,c8,c7,0  ;@ invalidate tlb
+    mcr p15,0,r2,c7,c10,4 ;@ DSB ??
+    bx lr
 
 
-.globl read_cpu_id
+.section ".text.boot"
+.global read_cpu_id
 read_cpu_id:
     // read cpu id, stop slave cores
     mrc p15, 0, r0,c0,c0,5
     bx lr
+
+.global higher_kernel
+higher_kernel:
+    ldr sp, =__svc_stack_base
+    bl unmap_identity
+    bl kernel_main

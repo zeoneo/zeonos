@@ -1,5 +1,9 @@
 TODO:
 [ ] : https://wiki.osdev.org/Undefined_Behavior_Sanitization
+[ ] : Multiboot headers
+
+
+Lets follow : https://wiki.osdev.org/Creating_an_Operating_System
 
 https://pubs.opengroup.org/onlinepubs/9699919799/
 

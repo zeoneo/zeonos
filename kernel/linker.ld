@@ -1,63 +1,78 @@
+
 ENTRY(_start)
- 
+
+KERNEL_LOADER_BASE = 0x8000;
+
+/*KERNEL_LINKER_BASE = 0x0;*/
+KERNEL_LINKER_BASE = 0xC0000000;
+
+
 SECTIONS
 {
     /* Starts at LOADER_ADDR. */
-    . = 0x8000;
+    . =  KERNEL_LOADER_BASE;
     __start = .;
     __text_start = .;
-    .text :
-    {
-        KEEP(*(.text.boot))
+    .multiboot.data : {
+        *(.multiboot.data)
+    }
+
+    .multiboot.text : {
+        *(.multiboot.text)
+    }
+    . += KERNEL_LINKER_BASE;
+
+    .text ALIGN(4K) : AT (ADDR(.text) - KERNEL_LINKER_BASE) {
+        *(.text.boot)
         *(.text)
     }
     . = ALIGN(4096); /* align to page size */
     __text_end = .;
     
-    .init : {
+    __init_start = .;
+    .init ALIGN (4K) : AT (ADDR (.init) - KERNEL_LINKER_BASE) {
 		*(.init)
 	}
+    __init_end = .;
 
     __rodata_start = .;
-    .rodata :
-    {
+    .rodata ALIGN (4K) : AT (ADDR (.rodata) - KERNEL_LINKER_BASE) {
         *(.rodata)
     }
     . = ALIGN(4096); /* align to page size */
     __rodata_end = .;
     
-    	.init_array : {
+    .init_array ALIGN (4K) : AT (ADDR (.init_array) - KERNEL_LINKER_BASE) {
 		__init_start = .;
-
 		KEEP(*(.init_array*))
-
 		__init_end = .;
 	}
 
-	.ARM.exidx : {
+    .ARM.exidx ALIGN (4K) : AT (ADDR (.ARM.exidx) - KERNEL_LINKER_BASE) {
 		__exidx_start = .;
-
 		*(.ARM.exidx*)
-
 		__exidx_end = .;
 	}
     
     __data_start = .;
-    .data :
-    {
+    .data ALIGN (4K) : AT (ADDR (.data) - KERNEL_LINKER_BASE) {
         *(.data)
     }
     . = ALIGN(4096); /* align to page size */
     __data_end = .;
  
     __bss_start = .;
-    .bss :
-    {
+    .bss ALIGN (4K) (NOLOAD): AT (ADDR (.bss) - KERNEL_LINKER_BASE) {
         bss = .;
         *(.bss)
+        . = ALIGN(4096); /* align to page size */
+        *(.heap)
     }
     . = ALIGN(4096); /* align to page size */
     __bss_end = .;
+
+    /* Exclude the BSS section */
+
 
     . = . + 131072; /* 128KB for svc stack */
     __svc_stack_base = .;
@@ -70,7 +85,7 @@ SECTIONS
 
     . = ALIGN(16384); /* align 16KB for page tables */
     __first_lvl_tbl_base = .;
-    . = . + 4096; /* First level page table size */
+    . = . + 4K; /* First level page table size */
     __first_lvl_tbl_end = .;
 
     . = ALIGN(1024); /* Align address here on 1KB boundary for 2nd level page table */
@@ -79,23 +94,6 @@ SECTIONS
     __second_lvl_tbl_base = .;
     . = . + 1048576; /* 1MB space for 2nd lvl tables. */
     __second_lvl_tbl_end = .;
-
-    /* DMA demo starts here */
-        . = ALIGN(4096);
-    dma_cb_page = .;
-    . = . + 4096; /* 4 KB for DMA control blocks */
-
-    dma_src_page_1 = . ;
-    . = . + 65536; /* 64 Kb of data */
-
-    dma_src_page_2 = . ;
-    . = . + 65536; /* 64 Kb of data */
-
-    dma_dest_page_1 = . ;
-    . = . + 65536; /* 64 Kb of data */
-
-    dma_dest_page_2 = . ;
-    . = . + 65536; /* 64 Kb of data */
-
+    . = ALIGN(4K);
     __kernel_end = .;
 }

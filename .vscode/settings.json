@@ -5,5 +5,7 @@
         "hello.hpp": "cpp",
         "stddef.h": "c",
         "stdlib.h": "c"
-    }
+    },
+    "cmake.copyCompileCommands": "${workspaceFolder}/build/compile_commands.json",
+
 }

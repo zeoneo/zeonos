@@ -3,6 +3,7 @@ add_executable(kernel8-32.elf
     boot.S
     stack_smash.c
     hello.cpp
+    kvirt_mem.c
     kernel.c
 )
 
