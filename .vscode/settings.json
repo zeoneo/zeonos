@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "uart0.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "hello.hpp": "cpp"
     }
 }
