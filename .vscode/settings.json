@@ -2,6 +2,8 @@
     "files.associations": {
         "uart0.h": "c",
         "stdint.h": "c",
-        "hello.hpp": "cpp"
+        "hello.hpp": "cpp",
+        "stddef.h": "c",
+        "stdlib.h": "c"
     }
 }

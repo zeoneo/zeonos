@@ -1,4 +1,4 @@
-#include "../drivers/uart0.h"
+#include <zeonos/drivers/uart0.h>
 #include "hello.hpp"
 
 extern char * my_function(int arg1, int arg2);
