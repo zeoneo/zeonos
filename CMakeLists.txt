@@ -9,6 +9,9 @@ set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
 
 set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
+
+add_definitions(-D__is_zeonos_kernel=1)
+
 # 
 #FIXME: -nostdinc
 set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -fbuiltin -mgeneral-regs-only -fno-asynchronous-unwind-tables  -fno-exceptions -Wno-cast-align -fstack-protector-strong")
