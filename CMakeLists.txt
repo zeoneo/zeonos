@@ -33,6 +33,7 @@ project(zeoos LANGUAGES C CXX ASM)
 
 # Add the top level include directory
 include_directories(include)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # Add the subdirectories
 add_subdirectory(libc)
