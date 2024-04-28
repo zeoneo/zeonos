@@ -5,7 +5,7 @@ set(CMAKE_CPP_COMPILER arm-none-eabi-g++)
 set(CMAKE_ASM_COMPILER arm-none-eabi-gcc)
 set(CMAKE_LINKER arm-none-eabi-ld)
 set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
-
+set( CMAKE_VERBOSE_MAKEFILE on )
 
 set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
