@@ -1,5 +1,5 @@
 #include <zeonos/drivers/uart0.h>
-#include "hello.hpp"
+#include <zeonos/kernel/hello.hpp>
 
 extern int __bss_start;
 extern int __bss_end;
@@ -39,7 +39,10 @@ int kernel_main(void) {
     uart_puts("Hello World stranger..!");
   #endif
   
-  uart_puts(my_function(get_1(), 0));
+  uart_puts(my_function(1, 0));
   uart_putc('\n');
+
+  // Kernel Main should not return
+  while (1); 
   return 0;
 }

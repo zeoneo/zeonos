@@ -63,10 +63,11 @@ set(CMAKE_CXX_CLANG_FORMAT ${CLANG_FORMAT_PATH})
 
 file(GLOB LIBC_SOURCES "${PROJECT_SOURCE_DIR}/libc/*.c")
 file(GLOB KERNEL_SOURCES "${PROJECT_SOURCE_DIR}/kernel/*.c")
+file(GLOB DRIVERS_SOURCES "${PROJECT_SOURCE_DIR}/drivers/*.c")
 
 # Define a custom target for clang-format
 add_custom_target(clang-format
-    COMMAND ${CMAKE_CXX_CLANG_FORMAT} -i ${LIBC_SOURCES} ${KERNEL_SOURCES}
+    COMMAND ${CMAKE_CXX_CLANG_FORMAT} -i ${LIBC_SOURCES} ${KERNEL_SOURCES} ${DRIVERS_SOURCES}
     COMMENT "Running clang-format on project sources"
     VERBATIM
 )

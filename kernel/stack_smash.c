@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <zeonos/drivers/uart0.h>
  
 #if UINT32_MAX == UINTPTR_MAX
 #define STACK_CHK_GUARD 0xe2dee396
@@ -12,6 +13,7 @@ uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 __attribute__((noreturn))
 void __stack_chk_fail(void)
 {
+    uart_puts("stack check failed. \n");
     while(1);
 
 }

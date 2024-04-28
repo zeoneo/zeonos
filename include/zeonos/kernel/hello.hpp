@@ -3,7 +3,7 @@
 extern "C" {
 #endif
 
-int get_1();
+char * get_1();
 
 #ifdef __cplusplus
 }
