@@ -1,1 +1,1 @@
-arm-none-eabi-gdb -ex "target remote localhost:1234" -ex "symbol-file zeonos_build/kernel/kernel8-32.elf"
+arm-none-eabi-gdb -ex "target remote localhost:1234" -ex "symbol-file zeonos_build/kernel8-32.elf"

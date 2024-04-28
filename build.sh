@@ -1,3 +1,3 @@
 cd zeonos_build
-cmake ..
+cmake -DCPU_ARCH=arm ..
 make VERBOSE=1
