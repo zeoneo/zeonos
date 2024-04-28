@@ -25,29 +25,16 @@ jobs:
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: |
-        wget -q -O - https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi.tar.xz | tar -xJf -
-        ls -al ./arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi/bin/
-
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: |
-        export PATH=./arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi/bin/:${PATH}
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        wget -qO - https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2 | tar -xjf -
+        ls -al ./gcc-arm-none-eabi-10.3-2021.10/bin/
 
     - name: Build
       # Build your program with the given configuration
       run: |
         export SHELL=/bin/bash
-        export PATH=./arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi/bin/:${PATH}
-        echo "export PATH=\$PATH:\$(pwd)/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi/bin/" >> $HOME/.profile && source $HOME/.profile
-        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: |
-        export PATH=./arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi/bin/:${PATH}
-        ctest -C ${{env.BUILD_TYPE}}
-
+        export PATH=./gcc-arm-none-eabi-10.3-2021.10/bin/:${PATH}
+        echo "export PATH=\$PATH:\$(pwd)/gcc-arm-none-eabi-10.3-2021.10/bin/" >> $HOME/.profile && source $HOME/.profile
+        mkdir zeonos_build
+        cd zeonos_build
+        cmake ..
+        make VERBOSE=1

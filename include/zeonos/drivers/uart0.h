@@ -3,7 +3,7 @@
 #include <stdint.h>
 enum {
     // The GPIO registers base address.
-    GPIO_BASE = 0x3F200000, // for raspi2 & 3, 0x20200000 for raspi1
+    GPIO_BASE = 0x3F200000 + 0xC0000000, // for raspi2 & 3, 0x20200000 for raspi1
 
     // The offsets for reach register.
 
@@ -14,7 +14,7 @@ enum {
     GPPUDCLK0 = (GPIO_BASE + 0x98),
 
     // The base address for UART.
-    UART0_BASE = 0x3F201000, // for raspi2 & 3, 0x20201000 for raspi1
+    UART0_BASE = GPIO_BASE + 0x1000, // for raspi2 & 3, 0x20201000 for raspi1
 
     // The offsets for reach register for the UART.
     UART0_DR     = (UART0_BASE + 0x00),

@@ -1,6 +1,12 @@
 {
     "files.associations": {
         "uart0.h": "c",
-        "stdint.h": "c"
-    }
+        "stdint.h": "c",
+        "hello.hpp": "cpp",
+        "stddef.h": "c",
+        "stdlib.h": "c"
+    },
+    "cmake.copyCompileCommands": "${workspaceFolder}/build/compile_commands.json",
+    "defines": ["__is_zeonos_kernel=1"],
+
 }

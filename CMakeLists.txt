@@ -5,20 +5,35 @@ set(CMAKE_CPP_COMPILER arm-none-eabi-g++)
 set(CMAKE_ASM_COMPILER arm-none-eabi-gcc)
 set(CMAKE_LINKER arm-none-eabi-ld)
 set(CMAKE_OBJCOPY arm-none-eabi-objcopy)
-
+set( CMAKE_VERBOSE_MAKEFILE on )
 
 set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+add_definitions(-D__is_zeonos_kernel=1)
 
-set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access")
+# 
+#FIXME: -nostdinc
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -fbuiltin -mgeneral-regs-only -fno-asynchronous-unwind-tables  -fno-exceptions -Wno-cast-align -fstack-protector-strong")
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostdlib")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -fbuiltin -mgeneral-regs-only -fno-asynchronous-unwind-tables -fno-exceptions -Wno-cast-align -fstack-protector-strong")
+
+#FIXME: Add standard headers later
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti ") #-nostdinc++
+
+# add_compile_options(-fsanitize=kernel-address)
+# add_link_options(-fsanitize=kernel-address)
+
+
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostdlib -nodefaultlibs")
 
 # Define the project name
 project(zeoos LANGUAGES C CXX ASM)
 
 # Add the top level include directory
 include_directories(include)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # Add the subdirectories
 add_subdirectory(libc)
@@ -48,10 +63,11 @@ set(CMAKE_CXX_CLANG_FORMAT ${CLANG_FORMAT_PATH})
 
 file(GLOB LIBC_SOURCES "${PROJECT_SOURCE_DIR}/libc/*.c")
 file(GLOB KERNEL_SOURCES "${PROJECT_SOURCE_DIR}/kernel/*.c")
+file(GLOB DRIVERS_SOURCES "${PROJECT_SOURCE_DIR}/drivers/*.c")
 
 # Define a custom target for clang-format
 add_custom_target(clang-format
-    COMMAND ${CMAKE_CXX_CLANG_FORMAT} -i ${LIBC_SOURCES} ${KERNEL_SOURCES}
+    COMMAND ${CMAKE_CXX_CLANG_FORMAT} -i ${LIBC_SOURCES} ${KERNEL_SOURCES} ${DRIVERS_SOURCES}
     COMMENT "Running clang-format on project sources"
     VERBATIM
 )

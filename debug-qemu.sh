@@ -1,0 +1,1 @@
+qemu-system-aarch64 -s -S -M raspi2b -kernel zeonos_build/kernel/kernel8-32.elf -serial stdio

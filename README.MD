@@ -15,6 +15,14 @@ Raspi2b -> bcm2836 has cortexA7 cores
 Raspi3b -> bcm2837 has cortexA53 cores -> in 32bit mode cortexa-53 (armv8-a arch) is same as cortex-a7 (armv7 arch). Hence while emulating on qemu
 we will use Machine = raspbi2b and cpu = cortex-a7
 
+
+## Build and Run
+```
+
+./qemu.sh
+
+```
+
 ## TODO List
 [] - Create project structure and build scripts
 [] - 
