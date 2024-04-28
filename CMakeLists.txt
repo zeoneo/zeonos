@@ -35,11 +35,25 @@ project(zeoos LANGUAGES C CXX ASM)
 include_directories(include)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+# Define an option for CPU architecture
+option(CPU_ARCH "Specify the CPU architecture to use" "arm")
+
+if(NOT CPU_ARCH)
+    # Set default architecture to "arm" if not specified
+    # set(CPU_ARCH "arm" CACHE STRING "Specify the CPU architecture to use" FORCE)
+    message(STATUS "Defaulting CPU_ARCH to arm")
+endif()
+
 # Add the subdirectories
 add_subdirectory(libc)
+add_subdirectory(arch/${CPU_ARCH})
 add_subdirectory(drivers)
-add_subdirectory(kernel)
 
+
+file(GLOB KERNEL_SOURCES "${PROJECT_SOURCE_DIR}/kernel/*.c" "${PROJECT_SOURCE_DIR}/kernel/*.cpp")
+
+# Define the executable name
+add_executable(kernel8-32.elf ${KERNEL_SOURCES})
 
 # Add support for cppcheck
 find_program(CPPCHECK_PATH cppcheck)
@@ -70,4 +84,19 @@ add_custom_target(clang-format
     COMMAND ${CMAKE_CXX_CLANG_FORMAT} -i ${LIBC_SOURCES} ${KERNEL_SOURCES} ${DRIVERS_SOURCES}
     COMMENT "Running clang-format on project sources"
     VERBATIM
+)
+
+
+
+# Link with the libc library
+target_link_libraries(kernel8-32.elf arch libc drivers)
+
+target_link_options(kernel8-32.elf PRIVATE -T${CMAKE_CURRENT_SOURCE_DIR}/arch/${CPU_ARCH}/linker.ld)
+
+add_custom_command(TARGET kernel8-32.elf POST_BUILD
+                   COMMAND ${CMAKE_OBJCOPY} -O binary kernel8-32.elf kernel8-32.img)
+
+add_custom_target(
+    kernel8-32.img ALL
+    DEPENDS kernel8-32.img
 )

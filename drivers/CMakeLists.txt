@@ -1,7 +1,6 @@
 # Define the library name
 add_library(drivers STATIC
     uart0.c
-    uart_lower.c
 )
 
 # Add the include directory for this subdirectory
