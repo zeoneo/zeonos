@@ -36,5 +36,5 @@ jobs:
         echo "export PATH=\$PATH:\$(pwd)/gcc-arm-none-eabi-10.3-2021.10/bin/" >> $HOME/.profile && source $HOME/.profile
         mkdir zeonos_build
         cd zeonos_build
-        cmake ..
+        cmake -DCPU_ARCH=arm ..
         make VERBOSE=1
