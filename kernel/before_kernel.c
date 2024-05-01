@@ -45,6 +45,7 @@ void before_kernel_primary_cpu_entry(void)
     _init_global_constructors();
 
     kernel_main();
+
     // No return
 }
 
@@ -56,6 +57,9 @@ void before_kernel_secondary_cpu_entry(unsigned int cpu_id)
 
     delay(1000 * 1000 * 1000 * cpu_id);
 
-    kernel_main();
-    // No return
+    uart_puts("Hello World zeonos..! from secondary cores \n cpu_id ");
+    hexstrings(read_cpu_id() & 0x03);
+    uart_putc('\n');
+    while (1)
+        ;
 }

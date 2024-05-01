@@ -27,6 +27,9 @@ void initialize_virtual_memory(unsigned int MMUTABLEBASE)
     mmu_section(MMUTABLEBASE, 0xC0000000, 0x00000000, 0x0000);
     mmu_section(MMUTABLEBASE, 0xC0000000 + MMUTABLEBASE, 0x00000000 + MMUTABLEBASE, 0x0000);
 
+    mmu_section(MMUTABLEBASE, 0x4000008C, 0x4000008C, 0x0000);
+    // mmu_section(MMUTABLEBASE, 0x4000008C + 0xC0000000, 0x4000008C, 0x0000);
+
     // peripherals
     mmu_section(MMUTABLEBASE, 0x3f000000, 0x3f000000, 0x0000); // NOT CACHED!
     mmu_section(MMUTABLEBASE, 0x3f000000 + 0xC0000000, 0x3f000000, 0x0000);
