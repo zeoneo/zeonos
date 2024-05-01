@@ -72,16 +72,21 @@ SECTIONS
     __bss_end = .;
 
     /* Exclude the BSS section */
-
-
-    . = . + 131072; /* 128KB for svc stack */
+    . = ALIGN(16384);
+    
+    . = . + 8192K; /* 8MB for 4 cores */
     __svc_stack_base = .;
 
-    . = . + 1024; /* 1024 Bytes for undef stack */
+    . = . + 128K; /* 1024 Bytes for undef stack */
     __undef_stack_base = .;
 
-    . = . + 1024; /* 1024 Bytes for irq stack */
+    . = . + 128K; /* 1024 Bytes for irq stack */
     __irq_stack_base = .;
+
+    . = . + 128K; /* 1024 Bytes for irq stack */
+    __fiq_stack_base = .;
+
+    
 
     . = ALIGN(16384); /* align 16KB for page tables */
     __first_lvl_tbl_base = .;
@@ -95,5 +100,9 @@ SECTIONS
     . = . + 1048576; /* 1MB space for 2nd lvl tables. */
     __second_lvl_tbl_end = .;
     . = ALIGN(4K);
+
+    
+
     __kernel_end = .;
+    __mmu_table_base = __first_lvl_tbl_base - KERNEL_LINKER_BASE;
 }
