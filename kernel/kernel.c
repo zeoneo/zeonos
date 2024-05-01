@@ -14,21 +14,21 @@ static inline void delay(int count)
 
 void marco(void)
 {
-  uart_puts("Hello World zeonos..! \n cpu_id ");
+  uart_puts("(marco) Hello World..! cpu_id ");
   hexstrings(read_cpu_id() & 0x03);
   uart_putc('\n');
 }
 
 void polo(void)
 {
-  uart_puts("Hello World zeonos..! \n cpu_id ");
+  uart_puts("(polo) Hello World..! cpu_id ");
   hexstrings(read_cpu_id() & 0x03);
   uart_putc('\n');
 }
 
 void caught(void)
 {
-  uart_puts("Hello World zeonos..! \n cpu_id ");
+  uart_puts("(caught) Hello World..! cpu_id ");
   hexstrings(read_cpu_id() & 0x03);
   uart_putc('\n');
 }
@@ -39,7 +39,7 @@ void kernel_main(void)
   uart_init();
 
 #ifdef __is_zeonos_kernel
-  uart_puts("Hello World zeonos..! \n cpu_id ");
+  uart_puts("Hello World zeonos..! cpu_id ");
   hexstrings(read_cpu_id() & 0x03);
   uart_putc('\n');
 #else
@@ -51,13 +51,13 @@ void kernel_main(void)
 
   uart_puts("starting secondary cores \n");
 
-  delay(1000 * 1000 * 1000 * 1);
+  delay(1000 * 1000 * 1);
   start_secondary_core(1, marco);
 
-  delay(1000 * 1000 * 1000 * 2);
+  delay(1000 * 1000 * 2);
   start_secondary_core(2, polo);
 
-  delay(1000 * 1000 * 1000 * 3);
+  delay(1000 * 1000 * 3);
   start_secondary_core(3, caught);
 
   // Kernel Main should not return

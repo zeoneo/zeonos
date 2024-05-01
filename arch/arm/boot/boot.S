@@ -77,14 +77,14 @@ _reset_:
 
 // CORTEX A53 Guide - MPIDR, Multiprocessor Affinity Register
 //
-    mrc p15, 0, r6,c0,c0,5
-    and     r6, r6, #3
-    mov r7, #0
-    cmp     r6, r7
-    beq 2f
-    // cpu id > 0, stop
-1:  b SecondarySpin
-2:  // cpu id == 0
+@     mrc p15, 0, r6,c0,c0,5
+@     and     r6, r6, #3
+@     mov r7, #0
+@     cmp     r6, r7
+@     beq 2f
+@     // cpu id > 0, stop
+@ 1:  b SecondarySpin
+@ 2:  // cpu id == 0
 
 
 
@@ -265,29 +265,6 @@ set_up_stacks:
     bx lr
 
 
-
-.balign	4
-SecondarySpin:
-	mrc     p15, 0, r0, c0, c0, 5
-	ands r0, r0, #0x3					    // Make core 2 bit bitmask in R0
-	ldr r5, =mbox	
-	ldr r5, [r5]		@ mbox
-	mov	r3, #0			@ magic
-	add	r5, #(0x400000CC-0x4000008C)	@ mbox
-SecondarySpinLoop:
-	wfe										// Lets CPU core sleep
-	ldr	r4, [r5, r0, lsl #4]
-	cmp	r4, r3
-	beq	SecondarySpinLoop
-@ clear mailbox
-	str	r4, [r5, r0, lsl #4]
-	@ ldr lr, =SecondarySpin
-    b multi_core_setup
-	b SecondarySpin
-
-mbox: 	.4byte 0x4000008C
-.balign 4
-
 .section ".text.boot"
 .global read_cpu_id
 read_cpu_id:
@@ -340,17 +317,37 @@ higher_kernel:
 1:  
     mrc p15, 0, r0,c0,c0,5 // r0 contains cpu id
     and	r0, r0, #0x3
-    b before_kernel_secondary_cpu_entry
+    b SecondarySpin
 2:  // cpu id == 0
     bl before_kernel_primary_cpu_entry
 
+.balign	4
+SecondarySpin:
+	mrc     p15, 0, r0, c0, c0, 5
+	ands r0, r0, #0x3					    // Make core 2 bit bitmask in R0
+	ldr r5, =mbox	
+	ldr r5, [r5]		@ mbox
+	mov	r3, #0			@ magic
+	add	r5, #(0x400000CC-0x4000008C)	@ mbox
+SecondarySpinLoop:
+	wfe										// Lets CPU core sleep
+	ldr	r4, [r5, r0, lsl #4]
+	cmp	r4, r3
+	beq	SecondarySpinLoop
+@ clear mailbox
+	str	r4, [r5, r0, lsl #4]
+	ldr lr, =SecondarySpin
+    bx r4
+	b SecondarySpin
 
+mbox: 	.4byte 0x4000008C
+.balign 4
 
 .balign 4
 
 .globl start_secondary_core
 start_secondary_core:
-	ldr r3, =#0x4000008C					// Load address of spins
+    ldr r3, =#0x4000008C					// Load address of spins
 	str r1, [r3, r0, lsl #4]				// Save caller address
 	sev
 	mov r0, #1
