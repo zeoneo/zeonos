@@ -32,7 +32,8 @@
 .equ	SCTLR_ENABLE_BRANCH_PREDICTION, 0x800
 .equ	SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000
 
-.equ    MMUTABLEBASE ,                  0x00004000
+.equ EXCEPTION_STACK_SIZE, 0x8000
+.equ SYS_STACK_SIZE, 0x20000
 
 // Declare constants for the multiboot header.
 .equ ALIGN,    1<<0             // align loaded modules on page boundaries
@@ -76,18 +77,21 @@ _reset_:
 
 // CORTEX A53 Guide - MPIDR, Multiprocessor Affinity Register
 //
+@     mrc p15, 0, r6,c0,c0,5
+@     and     r6, r6, #3
+@     mov r7, #0
+@     cmp     r6, r7
+@     beq 2f
+@     // cpu id > 0, stop
+@ 1:  b SecondarySpin
+@ 2:  // cpu id == 0
+
+
+
+multi_core_setup:
     mrc p15, 0, r6,c0,c0,5
     and     r6, r6, #3
-    mov r7, #0
-    cmp     r6, r7
-    beq 2f
-    // cpu id > 0, stop
-1:  wfe
-    b       1b
-2:  // cpu id == 0
-
-
-	mov r12, pc											
+    mov r12, pc											
 	mrs r0, CPSR										
 	orr r0, r0, #(ARM_I_BIT | ARM_F_BIT)				// Disable Irq/Fiq
 	and r11, r0, #ARM_MODE_MASK							//Clear all but CPU mode bits in register r11
@@ -108,6 +112,33 @@ _reset_:
     mov r0,#0xD3
     msr cpsr_c,r0
     ldr sp, =__svc_stack_base - 0xc0000000
+    
+    mrc p15, 0, r0,c0,c0,5 // r0 contains cpu id
+    and	r0, r0, #0x3 // only use last 2 bits
+
+    mov	r1, #EXCEPTION_STACK_SIZE	/* calculate exception stack offset for core */
+	mul	r1, r0, r1                  /* r1 contains the stack offset to be added to base */
+
+	cps	#0x11				/* set fiq mode */
+	ldr	r2, =__fiq_stack_base - 0xc0000000
+	sub	sp, r2, r1       /* Storage  stack pointer = __fiq_stack_back - 32K * CORE_ID (offset) */
+	
+    cps	#0x12				/* set irq mode */
+    ldr	r2, =__irq_stack_base - 0xc0000000
+	sub	sp, r2, r1       /* Storage  stack pointer = __irq_stack_back - 32K * CORE_ID (offset) */
+
+	cps	#0x17				/* set abort mode */
+    ldr	r2, =__undef_stack_base - 0xc0000000
+	sub	sp, r2, r1       /* Storage  stack pointer = __abort_stack_back - 32K * CORE_ID (offset) */
+	
+    cps	#0x1B				/* set "undefined" mode */
+	sub	sp, r2, r1       /* Storage  stack pointer = __abort_stack_back - 32K * CORE_ID (offset) */
+
+	mov	r1, #SYS_STACK_SIZE		/* calculate kernel stack offset for core */
+	mul	r1, r0, r1
+	cps	#0x1F				/* set system mode */
+	ldr	r2, =__svc_stack_base - 0xc0000000
+	add	sp, r1, r2
 
     // enable unaligned address access
 	mrc p15, 0, r0, c1, c0, 0
@@ -131,10 +162,17 @@ _reset_:
     bl lower_uart_init
     mov r0, #0x1234
     bl lower_hexstrings
+    ldr r0, =__mmu_table_base
+    bl lower_hexstrings
+    ldr r0, =__mmu_table_base
     bl initialize_virtual_memory
     bl invalidate_tlbs
     mov r0, #0x4321
     bl lower_hexstrings
+    
+    mrc p15, 0, r0, c0, c0, 0				;@ Read CPU ID Register
+    bl lower_hexstrings
+    
     ldr r0, =higher_kernel  // move the address to register r0
     bx  r0               // jump to the address in r0
 
@@ -142,6 +180,8 @@ _reset_:
 _inf_loop:
     b       _inf_loop
 
+
+.balign	4
 .globl PUT32
 PUT32:
     str r1,[r0]
@@ -193,6 +233,38 @@ invalidate_tlbs:
     bx lr
 
 
+.globl set_up_stacks
+set_up_stacks:
+    mrc p15, 0, r0,c0,c0,5 // r0 contains cpu id
+    and	r0, r0, #0x3 // only use last 2 bits
+
+    mov	r1, #EXCEPTION_STACK_SIZE	/* calculate exception stack offset for core */
+	mul	r1, r0, r1                  /* r1 contains the stack offset to be added to base */
+
+	cps	#0x11				/* set fiq mode */
+	ldr	r2, =__fiq_stack_base - 0xc0000000
+	sub	sp, r2, r1       /* Storage  stack pointer = __fiq_stack_back - 32K * CORE_ID (offset) */
+	
+    cps	#0x12				/* set irq mode */
+    ldr	r2, =__irq_stack_base - 0xc0000000
+	sub	sp, r2, r1       /* Storage  stack pointer = __irq_stack_back - 32K * CORE_ID (offset) */
+
+	cps	#0x17				/* set abort mode */
+    ldr	r2, =__undef_stack_base - 0xc0000000
+	sub	sp, r2, r1       /* Storage  stack pointer = __abort_stack_back - 32K * CORE_ID (offset) */
+	
+    cps	#0x1B				/* set "undefined" mode */
+	sub	sp, r2, r1       /* Storage  stack pointer = __abort_stack_back - 32K * CORE_ID (offset) */
+
+	mov	r1, #SYS_STACK_SIZE		/* calculate kernel stack offset for core */
+	mul	r1, r0, r1
+	cps	#0x1F				/* set system mode */
+	ldr	r2, =__svc_stack_base - 0xc0000000
+	add	sp, r1, r2
+
+    bx lr
+
+
 .section ".text.boot"
 .global read_cpu_id
 read_cpu_id:
@@ -203,5 +275,83 @@ read_cpu_id:
 .global higher_kernel
 higher_kernel:
     ldr sp, =__svc_stack_base
+
+
+    mrc p15, 0, r0,c0,c0,5 // r0 contains cpu id
+    and	r0, r0, #0x3 // only use last 2 bits
+
+    mov	r1, #EXCEPTION_STACK_SIZE	/* calculate exception stack offset for core */
+	mul	r1, r0, r1                  /* r1 contains the stack offset to be added to base */
+
+	cps	#0x11				/* set fiq mode */
+	ldr	r2, =__fiq_stack_base
+	sub	sp, r2, r1       /* Storage  stack pointer = __fiq_stack_back - 32K * CORE_ID (offset) */
+	
+    cps	#0x12				/* set irq mode */
+    ldr	r2, =__irq_stack_base
+	sub	sp, r2, r1       /* Storage  stack pointer = __irq_stack_back - 32K * CORE_ID (offset) */
+
+	cps	#0x17				/* set abort mode */
+    ldr	r2, =__undef_stack_base
+	sub	sp, r2, r1       /* Storage  stack pointer = __abort_stack_back - 32K * CORE_ID (offset) */
+	
+    cps	#0x1B				/* set "undefined" mode */
+	sub	sp, r2, r1       /* Storage  stack pointer = __abort_stack_back - 32K * CORE_ID (offset) */
+
+	mov	r1, #SYS_STACK_SIZE		/* calculate kernel stack offset for core */
+	mul	r1, r0, r1
+	cps	#0x1F				/* set system mode */
+	ldr	r2, =__svc_stack_base
+	add	sp, r1, r2
+
+
+    ldr r0, =__mmu_table_base
     bl unmap_identity
-    bl kernel_main
+
+
+    mrc p15, 0, r6,c0,c0,5
+    and     r6, r6, #3
+    mov r7, #0
+    cmp     r6, r7
+    beq 2f
+1:  
+    mrc p15, 0, r0,c0,c0,5 // r0 contains cpu id
+    and	r0, r0, #0x3
+    b SecondarySpin
+2:  // cpu id == 0
+    bl before_kernel_primary_cpu_entry
+
+.balign	4
+SecondarySpin:
+	mrc     p15, 0, r0, c0, c0, 5
+	ands r0, r0, #0x3					    // Make core 2 bit bitmask in R0
+	ldr r5, =mbox	
+	ldr r5, [r5]		@ mbox
+	mov	r3, #0			@ magic
+	add	r5, #(0x400000CC-0x4000008C)	@ mbox
+SecondarySpinLoop:
+	wfe										// Lets CPU core sleep
+	ldr	r4, [r5, r0, lsl #4]
+	cmp	r4, r3
+	beq	SecondarySpinLoop
+@ clear mailbox
+	str	r4, [r5, r0, lsl #4]
+	ldr lr, =SecondarySpin
+    bx r4
+	b SecondarySpin
+
+mbox: 	.4byte 0x4000008C
+.balign 4
+
+.balign 4
+
+.globl start_secondary_core
+start_secondary_core:
+    ldr r3, =#0x4000008C					// Load address of spins
+	str r1, [r3, r0, lsl #4]				// Save caller address
+	sev
+	mov r0, #1
+	bx  lr
+CoreExecuteFail:
+	mov r0, #0
+	bx  lr

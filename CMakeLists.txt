@@ -100,3 +100,15 @@ add_custom_target(
     kernel8-32.img ALL
     DEPENDS kernel8-32.img
 )
+
+add_custom_target(generate_map_file
+    COMMAND arm-none-eabi-nm kernel8-32.elf > kernel8-32.map
+    DEPENDS kernel8-32.elf
+    COMMENT "Generating kernel8-32.map file"
+)
+
+add_custom_target(generate_list_file
+    COMMAND arm-none-eabi-objdump -D -S kernel8-32.elf > kernel8-32.list
+    DEPENDS kernel8-32.elf
+    COMMENT "Generating kernel8-32.map file"
+)
