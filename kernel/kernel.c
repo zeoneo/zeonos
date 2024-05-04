@@ -1,6 +1,9 @@
 #include <zeonos/drivers/uart0.h>
 #include <zeonos/kernel/hello.hpp>
+#include <stddef.h>
+// #include <stdio.h>
 
+extern void *memmove(void *, const void *, size_t);
 extern char *my_function(int arg1, int arg2);
 
 extern void start_secondary_core(unsigned int core_id, unsigned int exec_address);
@@ -12,6 +15,8 @@ static inline void delay(int count)
                    : "cc");
 }
 
+const char *a = "prakash";
+char b[8] = {0};
 void marco(void)
 {
   uart_puts("(marco) Hello World..! cpu_id ");
@@ -31,6 +36,11 @@ void caught(void)
   uart_puts("(caught) Hello World..! cpu_id ");
   hexstrings(read_cpu_id() & 0x03);
   uart_putc('\n');
+
+  b[7] = '\0';
+  uart_puts(a);
+  memcpy(b, a, 4);
+  uart_puts(b);
 }
 
 void kernel_main(void)

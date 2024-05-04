@@ -14,12 +14,12 @@ add_definitions(-D__is_zeonos_kernel=1)
 
 # 
 #FIXME: -nostdinc
-set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -fbuiltin -mgeneral-regs-only -fno-asynchronous-unwind-tables  -fno-exceptions -Wno-cast-align -fstack-protector-strong")
+set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -mgeneral-regs-only -fno-asynchronous-unwind-tables  -fno-exceptions -Wno-cast-align -fstack-protector-strong -O2")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -fbuiltin -mgeneral-regs-only -fno-asynchronous-unwind-tables -fno-exceptions -Wno-cast-align -fstack-protector-strong")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -march=armv8-a+crc -mcpu=cortex-a53 -mfpu=crypto-neon-fp-armv8 -fpic -ffreestanding -nostdlib -nostartfiles -mno-unaligned-access -mfloat-abi=hard -fsigned-char -mgeneral-regs-only -fno-asynchronous-unwind-tables -fno-exceptions -Wno-cast-align -fstack-protector-strong -O2")
 
 #FIXME: Add standard headers later
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti ") #-nostdinc++
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_C_FLAGS} -fno-exceptions -fno-rtti -Wall -O2 -fno-tree-loop-distribute-patterns") #-nostdinc++
 
 # add_compile_options(-fsanitize=kernel-address)
 # add_link_options(-fsanitize=kernel-address)
@@ -91,7 +91,7 @@ add_custom_target(clang-format
 # Link with the libc library
 target_link_libraries(kernel8-32.elf arch libc drivers)
 
-target_link_options(kernel8-32.elf PRIVATE -T${CMAKE_CURRENT_SOURCE_DIR}/arch/${CPU_ARCH}/linker.ld)
+target_link_options(kernel8-32.elf PRIVATE -T${CMAKE_CURRENT_SOURCE_DIR}/arch/${CPU_ARCH}/linker.ld -nodefaultlibs -nostdlib -nostartfiles)
 
 add_custom_command(TARGET kernel8-32.elf POST_BUILD
                    COMMAND ${CMAKE_OBJCOPY} -O binary kernel8-32.elf kernel8-32.img)

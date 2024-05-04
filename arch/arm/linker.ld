@@ -3,7 +3,6 @@ ENTRY(_start)
 
 KERNEL_LOADER_BASE = 0x8000;
 
-/*KERNEL_LINKER_BASE = 0x0;*/
 KERNEL_LINKER_BASE = 0xC0000000;
 
 
@@ -90,6 +89,8 @@ SECTIONS
 
     . = ALIGN(16384); /* align 16KB for page tables */
     __first_lvl_tbl_base = .;
+    __mmu_table_base = __first_lvl_tbl_base - KERNEL_LINKER_BASE;
+
     . = . + 4K; /* First level page table size */
     __first_lvl_tbl_end = .;
 
@@ -102,7 +103,6 @@ SECTIONS
     . = ALIGN(4K);
 
     
-
     __kernel_end = .;
-    __mmu_table_base = __first_lvl_tbl_base - KERNEL_LINKER_BASE;
+    
 }
